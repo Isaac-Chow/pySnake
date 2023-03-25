@@ -1,4 +1,4 @@
-# Project Title
+# The Snake Game
 
 ## Table of Contents
 

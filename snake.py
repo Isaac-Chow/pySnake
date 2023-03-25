@@ -1,176 +1,120 @@
-import random
-import string
 from tkinter import *
+from random import randint
 
-# HEAD_CHARACTER = '😊'
-HEAD_CHARACTER = 'H'
-FOOD_CHARACTER = string.ascii_letters
-# FOOD_CHARACTER = [
-#     "😊","👎","👍","😍","😘","😜","😎","😡","😱","😳","😭","😢","😂","😃","😄","😅","😆","😉",
-#     "😊","👋","👍","👎","👌","👊","✊","✌️","👏","🙌","🙏","👆","👇","👈","👉","🖕","🖐","🤘",
-#     "😊","👎","👍","😍","😘","😜","😎","😡","😱","😳","😭","😢","😂","😃","😄","😅","😆","😉",
-#     "😊","👋","👍","👎","👌","👊","✊","✌️","👏","🙌","🙏","👆","👇","👈","👉","🖕","🖐","🤘",
-#     "🖖","🤙","💪","🖕","🖐","🤘","🖖","🤙","💪","🖖","🤙","💪","🖕","🖐","🤘","🖖","🤙","💪",
-#     "😊"
-#     ]
+root = Tk()
+root.config(bg='black')
+root.geometry('800x800')
+root.title('Immortal Snake Game')
+root.resizable(0, 0)
 
-class Application:
-    TITLE = 'Snake'
-    SIZE = 300,300
+c = Canvas(root, width=800, height=800, bg='black')
+c.place(x=0, y=0)
 
-    def __init__(self, master):
-        self.master = master
-        self.head = None
-        self.head_position = None
-        self.segments = []
-        self.segment_positions = []
-        self.speed = 3           # Add a speed attribute
-        self.food = None
-        self.food_position = None
-        self.direction = None
-        self.moved = True
+box = 20
+direction = 'DOWN'
 
-        self.running = False
-        self.init()
+snakehead = [240, 240]
+food = [int((randint(0, 400))/20)*20,
+        int((randint(0, 400))/20)*20]
+snake_pos = [[240, 240], [240, 230], [240, 220]]
 
-    def init(self):
-        self.master.title(self.TITLE)
 
-        self.canvas = Canvas(self.master)
-        self.canvas.grid(sticky=NSEW)
+def draw_snake():
+    for position in snake_pos:
+        c.create_rectangle(position[0], position[1],
+                           position[0]+20, position[1]+20,
+                           fill='red')
+        c.create_rectangle(snakehead[0], snakehead[1],
+                           snakehead[0]+20, snakehead[1]+20,
+                           fill='green')
 
-        self.start_button = Button(self.master,text='Start', command=self.on_start)
-        self.start_button.grid(sticky=EW)
 
-        self.master.bind('w', self.on_up)
-        self.master.bind('a', self.on_left)
-        self.master.bind('s', self.on_down)
-        self.master.bind('d', self.on_right)
+def show_food():
+    global food
+    c.create_rectangle(food[0], food[1],
+                       food[0]+20, food[1]+20,
+                       fill='blue')
+    if snakehead == food:
+        food = [int((randint(0, 400))/20)*20,
+                int((randint(0, 400))/20)*20]
+        snake_pos.append(food)
 
-        self.master.columnconfigure(0, weight=1)
-        self.master.rowconfigure(0, weight=1)
-        self.master.resizable(width=False, height=False)
-        self.master.geometry('%dx%d' % self.SIZE)
 
-    def on_start(self):
-        self.reset()
-        if self.running:
-            self.running = False
-            self.start_button.configure(text='Start')
+def left(e):
+    global direction
+    direction = 'LEFT'
+
+
+def right(e):
+    global direction
+    direction = 'RIGHT'
+
+
+def up(e):
+    global direction
+    direction = 'UP'
+
+
+def down(e):
+    global direction
+    direction = 'DOWN'
+
+
+root.bind('<Up>', up)
+root.bind('<Down>', down)
+root.bind('<Left>', left)
+root.bind('<Right>', right)
+
+
+def detect_move():
+    global direction
+    global snakehead
+    global snake_pos
+
+    if direction == 'DOWN':
+        if snakehead[1] == 800:
+            snakehead[1] = 0
         else:
-            self.running = True
-            self.start_button.configure(text='Stop')
-            self.start()
+            snakehead[1] += box
+        snake_pos.insert(0, list(snakehead))
+        snake_pos.pop()
 
-    def reset(self):
-        del self.segments[:]
-        del self.segment_positions[:]
-        self.canvas.delete(ALL)
+    if direction == 'UP':
+        if snakehead[1] == 0:
+            snakehead[1] = 800
+        else:
+            snakehead[1] -= box
+        snake_pos.insert(0, list(snakehead))
+        snake_pos.pop()
 
-    def start(self):
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
+    if direction == 'LEFT':
+        if snakehead[0] == 0:
+            snakehead[0] = 800
+        else:
+            snakehead[0] -= box
+        snake_pos.insert(0, list(snakehead))
+        snake_pos.pop()
 
-        self.canvas.create_rectangle(10,10,width-10,height-10)
-        self.direction = random.choice('wasd')
-        head_position = [round(width//2, -1), round(height//2, -1)]
-        self.head = self.canvas.create_text(tuple(head_position), text=HEAD_CHARACTER)
-        self.head_position = head_position
-        self.spawn_food()
-        self.tick()
+    if direction == 'RIGHT':
+        if snakehead[0] == 800:
+            snakehead[0] = 0
+        else:
+            snakehead[0] += box
+        snake_pos.insert(0, list(snakehead))
+        snake_pos.pop()
 
-    def spawn_food(self):
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-        positions = [tuple(self.head_position), self.food_position] + self.segment_positions
 
-        position = (round(random.randint(20, width-20), - 1), round(random.randint(20, height- 20), -1))
-        while position in positions:
-            position = (round(random.randint(20,width-20), -1), round(random.randint(20, height-20), -1))
+run = True
 
-        character = random.choice(FOOD_CHARACTER)
-        self.food = self.canvas.create_text(position, text=character)
-        self.food_position = position
-        self.food_character = character
 
-    def tick(self):
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-        previous_head_position = tuple(self.head_position)
+def update():
+    detect_move()
+    c.delete('all')
+    show_food()
+    draw_snake()
+    root.update()
+    root.after(50, update)
 
-        if self.direction == 'w':
-            self.head_position[1] -= self.speed
-        elif self.direction == 'a':
-            self.head_position[0] -= self.speed
-        elif self.direction == 's':
-            self.head_position[1] += self.speed
-        elif self.direction == 'd':
-            self.head_position[0] += self.speed
 
-        head_position = tuple(self.head_position)
-        if self.head_position[0] < 10 or self.head_position[0] >= width-10 or self.head_position[1] < 10 or \
-                self.head_position[1] >= height-10 or any(segment_position == head_position for segment_position \
-                                                          in self.segment_positions):
-            self.game_over()
-            return
-
-        if head_position == self.food_position:
-            print("Hello I just ate it")
-            self.canvas.coords(self.food, previous_head_position)
-            self.segments.append(self.food)
-            self.segment_positions.append(previous_head_position)
-            self.spawn_food()
-            # check for the size of the segments to increase teh speed
-            if int(len(self.segments)) % 5 == 0:
-                self.speed += 4
-            elif int(len(self.segments)) < 5:
-                self.speed = 5
-
-        if self.segments:
-            previous_position = previous_head_position
-            for index, (segment, position) in enumerate(zip(self.segments, self.segment_positions)):
-                self.canvas.coords(segment, previous_position)
-                self.segment_positions[index] = previous_position
-                previous_position = position
-
-        self.canvas.coords(self.head, head_position)
-        self.moved = True
-        self.canvas.after(50, self.tick)
-
-    def game_over(self):
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-
-        self.running = False
-        self.start_button.configure(text='Start')
-        score = len(self.segments) * 10
-        self. canvas.create_text( (round(width//2, -1), round(height // 2, -1)),
-                                 text='Game Over! Your score was: %d' % score )
-
-    def on_up(self,event):
-        if self.moved and not self.direction == 's':
-            self.direction = 'w'
-            self.moved = False
-
-    def on_down(self,event):
-        if self.moved and not self.direction == 'w':
-            self.direction = 's'
-            self.moved = False
-
-    def on_left(self,event):
-        if self.moved and not self.direction == 'd':
-            self.direction = 'a'
-            self.moved = False
-
-    def on_right(self,event):
-        if self.moved and not self.direction == 'a':
-            self.direction = 'd'
-            self.moved = False
-
-def main():
-    root =Tk()
-    Application(root)
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
+update()
+root.mainloop()

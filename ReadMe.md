@@ -26,7 +26,7 @@ To install this game on your computer, follow the below suggestions.
 - Use the command line
 
 ```
-git clone <link_to_this_repo>
+git clone https://github.com/Isaac-Chow/pySnake.git
 ```
 
 ## Usage <a name = "usage"></a>
